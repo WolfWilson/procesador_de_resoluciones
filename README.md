@@ -1,4 +1,4 @@
-# 🗂️ PROCESADOR DE RESOLUCIONES
+# 🗂️ Procesador de Resoluciones
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)
 ![PyQt6](https://img.shields.io/badge/PyQt6-GUI-green?style=for-the-badge&logo=qt)
@@ -6,116 +6,146 @@
 ![Windows](https://img.shields.io/badge/OS-Windows%2010%2B-lightgrey?style=for-the-badge&logo=windows)
 ![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-orange?style=for-the-badge)
 
-Este proyecto **PROCESADOR DE RESOLUCIONES** automatiza la gestión de documentos PDF (Resoluciones) en una **estructura de directorios y base de datos** Microsoft SQL Server. Integra la verificación del formato de nombres de archivo, la extracción de texto desde PDFs y la posterior actualización de registros en la tabla **Maestro**. También maneja copias de seguridad y limpieza de archivos.
+---
+
+Este proyecto **Procesador de Resoluciones** automatiza la gestión de documentos PDF en un entorno estructurado con carpetas de red y base de datos **SQL Server**.  
+Incluye validación de nombres de archivo, extracción de texto desde PDFs, inserción en tablas de base de datos y mantenimiento automatizado de directorios, con una arquitectura preparada para integrarse con **PyQt6**.
 
 ---
 
-## 🚀 **Características Principales**
-- **Copiado y verificación de archivos PDF** desde un directorio de origen a uno temporal.
-- **Validación de la estructura del nombre** de archivo, garantizando que coincida con el patrón `<Letra>-<Actuacion>-<Ejercicio>.pdf`.
-- **Inserción de datos** en tablas intermedias (**Wilson** y **Wilson2**) y actualización final en **Maestro**.
-- **Extracción de texto** desde PDFs usando **PyPDF2**, para almacenar en el campo `extracto`.
-- **Registro y manejo de errores** (nombres de archivo inválidos o años no válidos).
-- **Traslado y copias de seguridad** de archivos a la carpeta correspondiente al año, manteniendo un log de ejecución.
-- **Estructura lista** para integrar con una interfaz gráfica **PyQt6** (próximamente).
+## 🚀 Características Principales
+
+- 📥 Copiado y verificación de archivos PDF desde un origen de red hacia un directorio temporal.
+- 🧾 Validación de nombres de archivo según el patrón: `<Letra>-<Actuacion>-<Ejercicio>.pdf`.
+- 🗃️ Inserción en tablas **Wilson**, **Wilson2** y actualización de la tabla principal **Maestro**.
+- 📚 Extracción de texto desde los PDFs utilizando **PyPDF2**, almacenando en el campo `extracto`.
+- 🚫 Registro de errores y generación de logs para archivos con nombre inválido o año no reconocido.
+- 🧹 Traslado automático y backup de archivos procesados, con logs detallados.
+- 🖼️ Infraestructura lista para integrar una interfaz gráfica con **PyQt6** *(en desarrollo)*.
 
 ---
 
-## 📂 **Estructura Inicial (Código Base)**
+## 📁 Estructura del Proyecto
+
 ```plaintext
-📦 Procesador_Resoluciones/
-│
-├── main.py                          # Punto de entrada principal
-├── README.md                        # Documentación del proyecto (este archivo)
-├── requirements.txt                 # Dependencias del proyecto
-│
-├── # En el futuro:
-│   ├── gui/                         # Módulos e interfaces PyQt6
-│   ├── modules/                     # Módulos de lógica y helpers
-│   └── assets/                      # Recursos (íconos, imágenes, estilos)
+Procesador_Resoluciones/
+├── main.py                # Punto de entrada principal
+├── README.md              # Documentación del proyecto
+├── requirements.txt       # Dependencias del entorno
+
+# Estructura futura:
+├── gui/                   # Interfaces gráficas PyQt6
+├── modules/               # Lógica del proceso y funciones auxiliares
+└── assets/                # Recursos (íconos, imágenes, estilos)
+
 ```
 
 ## 🔧 Requisitos y Configuración
 ```plaintext
-Python 3.12 (o superior).
+Python 3.12+
 
-Librerías indicadas en requirements.txt (ej. pyodbc, PyPDF2, etc.).
+Dependencias (ver requirements.txt):
+- pyodbc
+- PyPDF2
+- PyQt6
 
-Servidor SQL Server accesible con autenticación de Windows.
+Requisitos de entorno:
+- SQL Server con acceso habilitado mediante autenticación de Windows
+- Directorios existentes:
+  • \\fs01\Resoluciones_Temp   → Origen de los PDFs
+  • C:\Temp                    → Carpeta temporal de trabajo
+  • \\fs01\Resoluciones        → Destino final organizado por año
 
-Carpetas adecuadas en el filesystem (rutas de origen y destino):
-
-\\fs01\Resoluciones_Temp (origen de PDFs)
-
-C:\Temp (directorio temporal)
-
-\\fs01\Resoluciones (directorio final, organizado por año)
 ```
 
-### 📥 Instalación de Dependencias
+## 📦 **Instalación y Uso**
+
+### 1️⃣ **Clonar el repositorio**
 ```sh
-pip install -r requirements.txt
+git clone https://github.com/WolfWilson/procesador_de_resoluciones.git
+cd procesador_de_resoluciones
 ```
 
-```plaintext
-El script:
+###  2️⃣ **Crear y activar un entorno virtual**
 
-Copiará los PDFs válidos.
-
-Validará el nombre y año de los archivos.
-
-Insertará, actualizará y registrará la información en la base de datos.
-
-Generará logs para archivos inválidos y para la limpieza final.
+```sh
+python -m venv venv
 ```
+
+###  3️⃣ **Instalar dependencias**
+
+```sh
+pip install pyodbc
+pip install pyqt6
+pip install pypdf2
+```
+###4️⃣ **Ejecutar la aplicación**
+
+```sh
+python main.py
+
+```
+
 
 ## 🧩 Flujo de Trabajo Simplificado
 
 ```plaintext
 copy_files()
-Copia PDFs desde \\fs01\Resoluciones_Temp a C:\Temp.
+🔸 Copia todos los archivos PDF desde \\fs01\Resoluciones_Temp hacia C:\Temp.
 
 process_files()
-Verifica el patrón <Letra>-<Actuacion>-<Ejercicio>.pdf y filtra archivos no válidos.
+🔸 Valida que los archivos tengan el formato <Letra>-<Actuacion>-<Ejercicio>.pdf.
+🔸 Filtra y descarta archivos con nombres no válidos.
 
 insert_and_update_db()
-
-Limpia tablas Wilson, Wilson2.
-
-Inserta los registros básicos en Wilson y Wilson2.
-
-Inserta/actualiza datos en Maestro (incluyendo extracto con texto del PDF).
+🔸 Elimina registros previos en las tablas Wilson y Wilson2.
+🔸 Inserta nuevos registros en ambas tablas con información básica.
+🔸 Inserta o actualiza datos en la tabla Maestro, incluyendo el extracto del texto del PDF.
 
 clean_and_move_files()
-Mueve los PDFs procesados desde C:\Temp a la carpeta \\fs01\Resoluciones\<Ejercicio>, y crea una copia de seguridad en C:\Temp\Procesados\PDFs_BK.
-Registra detalles en un archivo de log con timestamp.
+🔸 Mueve los archivos procesados a \\fs01\Resoluciones\<Ejercicio>.
+🔸 Crea un respaldo en C:\Temp\Procesados\PDFs_BK.
+🔸 Registra los movimientos en un archivo de log con timestamp.
 
 generate_invalid_files_log()
-Registra los nombres de archivo que no cumplieron con el patrón o el año válido en C:\Temp\Procesados\log_errores.txt.
+🔸 Registra en C:\Temp\Procesados\log_errores.txt los nombres de archivos rechazados por patrón incorrecto o año inválido.
+
 ```
 
 ## ⚙️ Integración con PyQt6 (Próximamente)
 ```plaintext
-Se planea desarrollar una interfaz gráfica utilizando PyQt6 que permita:
+Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilitar la interacción del usuario con el proceso de manejo de resoluciones. Esta GUI ofrecerá una experiencia más amigable, con múltiples funcionalidades clave:
 
-Seleccionar rutas y configurar parámetros de conexión.
+📂 Selección de Rutas y Parámetros de Conexión
+↪ Permitirá definir las ubicaciones de entrada/salida de los archivos y configurar detalles de conexión a la base de datos.
 
-Mostrar una lista de archivos válidos e inválidos antes de procesarlos.
+📋 Previsualización de Archivos Válidos/Inválidos
+↪ Antes de ejecutar el proceso, la interfaz mostrará una lista clasificada de archivos detectados según el patrón esperado.
 
-Visualizar el log de ejecución y resultado de la inserción en la base.
+🧾 Visualización de Logs en Tiempo Real
+↪ Se podrá observar el log de ejecución directamente desde la interfaz, incluyendo los resultados de inserción y procesamiento.
 
-Integrarse con otras funcionalidades de la organización para manejo de resoluciones.
+🔗 Integración con Otras Funcionalidades Organizacionales
+↪ La aplicación buscará conectarse con herramientas ya existentes para una gestión centralizada de resoluciones.
 ```
 
 ## 🏗️ Funcionalidades en Desarrollo
 ```plaintext
-Interfaz amigable para ejecutar el proceso paso a paso.
+Estas son las mejoras en curso que enriquecerán tanto la robustez del sistema como la experiencia del usuario:
 
-Parámetros configurables (rutas, servidor, nombre de BD) desde la GUI.
+🪜 Ejecución Paso a Paso desde la Interfaz
+↪ Permite ejecutar cada etapa del flujo de forma controlada, ideal para depuración o uso manual.
 
-Reporte detallado en formato PDF con los resultados de la ejecución.
+⚙️ Configuración Dinámica de Parámetros
+↪ Desde la GUI se podrá ajustar rutas, servidor, nombre de base de datos y otros parámetros sin modificar el código fuente.
 
-Manejo de excepciones mejorado (errores de red, permisos de archivos, etc.).
+📑 Generación de Reportes Detallados en PDF
+↪ Al finalizar el proceso, se podrá exportar un informe completo con resultados, estadísticas y errores encontrados.
+
+🚨 Manejo Mejorado de Excepciones
+↪ Se incorporarán controles para errores comunes como fallas de red, permisos de archivos, y problemas con el acceso a la base de datos.
+
+
 ```
 
 ### 📝 Licencia
