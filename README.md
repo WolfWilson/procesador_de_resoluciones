@@ -112,10 +112,7 @@ generate_invalid_files_log()
 ```
 
 ## ⚙️ Integración con PyQt6 (Próximamente)
-```plaintext
-Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilitar la
- interacción del usuario con el proceso de manejo de resoluciones. 
- Esta GUI ofrecerá una experiencia más amigable, con múltiples funcionalidades clave:
+Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilitar la interacción del usuario con el proceso de manejo de resoluciones. Esta GUI ofrecerá una experiencia más amigable, con múltiples funcionalidades clave:
 
 📂 Selección de Rutas y Parámetros de Conexión
 ↪ Permitirá definir las ubicaciones de entrada/salida de los archivos y configurar detalles de conexión a la base de datos.
@@ -128,7 +125,7 @@ Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilita
 
 🔗 Integración con Otras Funcionalidades Organizacionales
 ↪ La aplicación buscará conectarse con herramientas ya existentes para una gestión centralizada de resoluciones.
-```
+
 
 ## 🏗️ Funcionalidades en Desarrollo
 ```plaintext
