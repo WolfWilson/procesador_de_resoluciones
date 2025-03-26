@@ -114,16 +114,16 @@ generate_invalid_files_log()
 ## ⚙️ Integración con PyQt6 (Próximamente)
 Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilitar la interacción del usuario con el proceso de manejo de resoluciones. Esta GUI ofrecerá una experiencia más amigable, con múltiples funcionalidades clave:
 
-📂 Selección de Rutas y Parámetros de Conexión
+📂 Selección de Rutas y Parámetros de Conexión  
 ↪ Permitirá definir las ubicaciones de entrada/salida de los archivos y configurar detalles de conexión a la base de datos.
 
-📋 Previsualización de Archivos Válidos/Inválidos
+📋 Previsualización de Archivos Válidos/Inválidos  
 ↪ Antes de ejecutar el proceso, la interfaz mostrará una lista clasificada de archivos detectados según el patrón esperado.
 
-🧾 Visualización de Logs en Tiempo Real
+🧾 Visualización de Logs en Tiempo Real  
 ↪ Se podrá observar el log de ejecución directamente desde la interfaz, incluyendo los resultados de inserción y procesamiento.
 
-🔗 Integración con Otras Funcionalidades Organizacionales
+🔗 Integración con Otras Funcionalidades Organizacionales  
 ↪ La aplicación buscará conectarse con herramientas ya existentes para una gestión centralizada de resoluciones.
 
 
