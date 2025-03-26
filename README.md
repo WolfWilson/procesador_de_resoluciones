@@ -1,6 +1,4 @@
-# procesador_de_resolucionesfrom pathlib import Path
-
-readme_content = """# 🗂️ PROCESADOR DE RESOLUCIONES
+# 🗂️ PROCESADOR DE RESOLUCIONES
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)
 ![PyQt6](https://img.shields.io/badge/PyQt6-GUI-green?style=for-the-badge&logo=qt)
@@ -59,7 +57,7 @@ C:\Temp (directorio temporal)
 pip install -r requirements.txt
 ```
 
-
+```plaintext
 El script:
 
 Copiará los PDFs válidos.
@@ -69,9 +67,11 @@ Validará el nombre y año de los archivos.
 Insertará, actualizará y registrará la información en la base de datos.
 
 Generará logs para archivos inválidos y para la limpieza final.
+```
 
 ## 🧩 Flujo de Trabajo Simplificado
 
+```plaintext
 copy_files()
 Copia PDFs desde \\fs01\Resoluciones_Temp a C:\Temp.
 
@@ -92,9 +92,10 @@ Registra detalles en un archivo de log con timestamp.
 
 generate_invalid_files_log()
 Registra los nombres de archivo que no cumplieron con el patrón o el año válido en C:\Temp\Procesados\log_errores.txt.
-
+```
 
 ## ⚙️ Integración con PyQt6 (Próximamente)
+```plaintext
 Se planea desarrollar una interfaz gráfica utilizando PyQt6 que permita:
 
 Seleccionar rutas y configurar parámetros de conexión.
@@ -104,8 +105,10 @@ Mostrar una lista de archivos válidos e inválidos antes de procesarlos.
 Visualizar el log de ejecución y resultado de la inserción en la base.
 
 Integrarse con otras funcionalidades de la organización para manejo de resoluciones.
+```
 
 ## 🏗️ Funcionalidades en Desarrollo
+```plaintext
 Interfaz amigable para ejecutar el proceso paso a paso.
 
 Parámetros configurables (rutas, servidor, nombre de BD) desde la GUI.
@@ -113,6 +116,7 @@ Parámetros configurables (rutas, servidor, nombre de BD) desde la GUI.
 Reporte detallado en formato PDF con los resultados de la ejecución.
 
 Manejo de excepciones mejorado (errores de red, permisos de archivos, etc.).
+```
 
 ### 📝 Licencia
 Este proyecto es de uso interno (INSSSEP) y no se distribuye públicamente.
