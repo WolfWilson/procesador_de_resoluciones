@@ -89,7 +89,7 @@ python main.py
 
 ## 🧩 Flujo de Trabajo Simplificado
 
-```plaintext
+
 copy_files()
 🔸 Copia todos los archivos PDF desde \\fs01\Resoluciones_Temp hacia C:\Temp.
 
@@ -110,10 +110,10 @@ clean_and_move_files()
 generate_invalid_files_log()
 🔸 Registra en C:\Temp\Procesados\log_errores.txt los nombres de archivos rechazados por patrón incorrecto o año inválido.
 
-```
+
 
 ## ⚙️ Integración con PyQt6 (Próximamente)
-```plaintext
+
 Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilitar la interacción del usuario con el proceso de manejo de resoluciones. Esta GUI ofrecerá una experiencia más amigable, con múltiples funcionalidades clave:
 
 📂 Selección de Rutas y Parámetros de Conexión
@@ -127,10 +127,10 @@ Se está diseñando una interfaz gráfica utilizando PyQt6, orientada a facilita
 
 🔗 Integración con Otras Funcionalidades Organizacionales
 ↪ La aplicación buscará conectarse con herramientas ya existentes para una gestión centralizada de resoluciones.
-```
+
 
 ## 🏗️ Funcionalidades en Desarrollo
-```plaintext
+
 Estas son las mejoras en curso que enriquecerán tanto la robustez del sistema como la experiencia del usuario:
 
 🪜 Ejecución Paso a Paso desde la Interfaz
@@ -146,7 +146,6 @@ Estas son las mejoras en curso que enriquecerán tanto la robustez del sistema c
 ↪ Se incorporarán controles para errores comunes como fallas de red, permisos de archivos, y problemas con el acceso a la base de datos.
 
 
-```
 
 ### 📝 Licencia
 Este proyecto es de uso interno (INSSSEP) y no se distribuye públicamente.
