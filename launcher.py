@@ -3,8 +3,8 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QProgressBar, QMessageBox
 )
-from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QThread, pyqtSignal, Qt
+from PyQt6.QtGui import QIcon, QPixmap
 
 import sys
 
@@ -60,12 +60,27 @@ class MainWindow(QWidget):
         self.hilo.terminado.connect(self.mostrar_mensaje)
 
     def iniciar_proceso(self):
-        respuesta = QMessageBox.question(
-            self,
-            "Confirmación de Proceso",
-            "¿Desea iniciar el proceso de carga de Resoluciones?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        # Creamos un QMessageBox manual para la pregunta
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Confirmación de Proceso")
+        msg_box.setText("¿Desea iniciar el proceso de carga de Resoluciones?")
+        msg_box.setIcon(QMessageBox.Icon.NoIcon)  # Quita el ícono por defecto
+
+        # Ícono interrogación
+        pix_interrogacion = QPixmap(ResourceManager.interrogacion_icon())
+        pix_interrogacion = pix_interrogacion.scaled(
+            50, 50,
+            aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio,
+            transformMode=Qt.TransformationMode.SmoothTransformation
         )
+        msg_box.setIconPixmap(pix_interrogacion)
+
+        # Añade botones de Sí/No
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+
+        # Muestra el mensaje y obtén la respuesta
+        respuesta = msg_box.exec()
 
         if respuesta == QMessageBox.StandardButton.Yes:
             self.boton.setEnabled(False)
@@ -74,15 +89,27 @@ class MainWindow(QWidget):
 
     def mostrar_mensaje(self, mensaje):
         self.boton.setEnabled(True)
-        QMessageBox.information(self, "Resultado", mensaje)
+        
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Resultado")
+        msg_box.setText(mensaje)
+        msg_box.setIcon(QMessageBox.Icon.NoIcon)
+
+        # Ícono exclamación
+        pix_exclamacion = QPixmap(ResourceManager.exclamacion_icon())
+        pix_exclamacion = pix_exclamacion.scaled(
+            48, 48,
+            aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio,
+            transformMode=Qt.TransformationMode.SmoothTransformation
+        )
+        msg_box.setIconPixmap(pix_exclamacion)
+
+        msg_box.exec()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-    # Aplica la hoja de estilo, si lo deseas
-    apply_stylesheet(app)
-
+    apply_stylesheet(app)  # opcional
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

@@ -30,5 +30,11 @@ class ResourceManager:
     #     return ResourceManager.resource_path("otro.png")
 
     @staticmethod
-    def cora_icon():
-        return ResourceManager.resource_path("cora.png")
+    def exclamacion_icon():
+        return ResourceManager.resource_path("exclamacion.png")
+
+    @staticmethod
+    def interrogacion_icon():
+        return ResourceManager.resource_path("interrogacion.png")
+
+
