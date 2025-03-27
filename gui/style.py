@@ -1,18 +1,35 @@
-
-#modules/style.copy
 STYLE_MAIN = """
+QWidget {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    font-family: Segoe UI, sans-serif;
+    font-size: 12px;
+}
+
 QPushButton {
-    background-color: #0078d7;
-    color: white;
+    background-color: #3399ff;
+    color: #f0f0f0;
     padding: 8px;
+    border: none;
     border-radius: 6px;
 }
+QPushButton:hover {
+    background-color: #5aaeff;
+}
+QPushButton:pressed {
+    background-color: #2b89cc;
+}
+
 QProgressBar {
-    border: 1px solid #bbb;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
     border-radius: 5px;
-    text-align: center;
+    text-align: right;
+    color: #f0f0f0;
+    padding-right: 5px;
 }
 QProgressBar::chunk {
-    background-color: #0078d7;
+    background-color: #3399ff;
+    border-radius: 5px;
 }
 """

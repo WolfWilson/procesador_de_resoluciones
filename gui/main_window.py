@@ -1,19 +1,14 @@
+# gui/main_window.py
+
 from PyQt6.QtWidgets import (
-    QWidget, QPushButton, QVBoxLayout, QProgressBar, QMessageBox, QApplication
+    QWidget, QPushButton, QVBoxLayout, QProgressBar, QMessageBox, QApplication, QLabel
 )
 from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtGui import QIcon, QPixmap
 import sys
-from PyQt6.QtGui import QIcon
 
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QLabel
+# Importa el ResourceManager
 from modules.resource_manager import ResourceManager
-
-# Mostrar imagen
-label_icono = QLabel()
-pixmap = QPixmap(ResourceManager.paper_icon())
-label_icono.setPixmap(pixmap)
-
 
 # Importar funciones del script principal
 from main import copy_files, process_files, insert_and_update_db, clean_and_move_files, generate_invalid_files_log
@@ -50,6 +45,14 @@ class MainWindow(QWidget):
         self.setWindowTitle("Procesador de Resoluciones")
         self.setMinimumWidth(400)
 
+        # Se puede usar el ícono para la ventana completa
+        self.setWindowIcon(QIcon(ResourceManager.paper_icon()))
+
+        # Muestra el icono en un QLabel si así se desea
+        self.label_icono = QLabel()
+        pixmap = QPixmap(ResourceManager.paper_icon())
+        self.label_icono.setPixmap(pixmap)
+
         # Botón
         self.boton = QPushButton("Procesar")
         self.boton.clicked.connect(self.iniciar_proceso)
@@ -60,6 +63,7 @@ class MainWindow(QWidget):
 
         # Layout
         layout = QVBoxLayout()
+        layout.addWidget(self.label_icono)
         layout.addWidget(self.boton)
         layout.addWidget(self.progreso)
         self.setLayout(layout)
