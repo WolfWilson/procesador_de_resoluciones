@@ -7,11 +7,15 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap
 import sys
 
-# Importa el ResourceManager
+# Importa ResourceManager
 from modules.resource_manager import ResourceManager
 
-# Importar funciones del script principal
+# Importa el método para aplicar estilo
+from gui.style import apply_stylesheet
+
+# Importar funciones del script principal (ajusta la ruta si es necesario)
 from main import copy_files, process_files, insert_and_update_db, clean_and_move_files, generate_invalid_files_log
+
 
 class ProcesamientoThread(QThread):
     progreso = pyqtSignal(int)
@@ -39,16 +43,17 @@ class ProcesamientoThread(QThread):
         except Exception as e:
             self.terminado.emit(f"Error durante el procesamiento: {e}")
 
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Procesador de Resoluciones")
         self.setMinimumWidth(400)
 
-        # Se puede usar el ícono para la ventana completa
+        # Icono de la ventana
         self.setWindowIcon(QIcon(ResourceManager.paper_icon()))
 
-        # Muestra el icono en un QLabel si así se desea
+        # Si quieres mostrar el ícono en un QLabel:
         self.label_icono = QLabel()
         pixmap = QPixmap(ResourceManager.paper_icon())
         self.label_icono.setPixmap(pixmap)
@@ -61,7 +66,7 @@ class MainWindow(QWidget):
         self.progreso = QProgressBar()
         self.progreso.setValue(0)
 
-        # Layout
+        # Layout principal
         layout = QVBoxLayout()
         layout.addWidget(self.label_icono)
         layout.addWidget(self.boton)
@@ -82,8 +87,13 @@ class MainWindow(QWidget):
         self.boton.setEnabled(True)
         QMessageBox.information(self, "Resultado del Proceso", mensaje)
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Aplica los estilos antes de crear o mostrar la ventana:
+    apply_stylesheet(app)
+
     ventana = MainWindow()
     ventana.show()
     sys.exit(app.exec())

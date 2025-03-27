@@ -1,19 +1,30 @@
 # modules/resource_manager.py
-
 import os
 import sys
 
-def resource_path(relative_path: str) -> str:
-    """
-    Devuelve la ruta absoluta para el recurso, tanto en desarrollo
-    como en el entorno compilado con PyInstaller.
-    """
-    # Cuando se compila con PyInstaller, la ruta base se guarda en sys._MEIPASS
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_path, relative_path)
-
 class ResourceManager:
     @staticmethod
-    def paper_icon() -> str:
-        """Devuelve la ruta completa al icono 'paper.png'."""
-        return resource_path("assets/paper.png")
+    def resource_path(relative_path: str) -> str:
+        """
+        Devuelve la ruta absoluta del recurso (iconos, imágenes, etc.)
+        funcionando en ejecución normal o con PyInstaller.
+        """
+        if hasattr(sys, '_MEIPASS'):
+            # Carpeta temporal donde PyInstaller extrae los recursos
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, "assets", relative_path)
+
+    @staticmethod
+    def paper_icon():
+        """
+        Devuelve la ruta al archivo 'paper.png' dentro de 'assets/'.
+        """
+        return ResourceManager.resource_path("paper.png")
+
+    # Si necesitas más iconos/imágenes, puedes seguir este patrón:
+    # @staticmethod
+    # def otro_icono():
+    #     return ResourceManager.resource_path("otro.png")
