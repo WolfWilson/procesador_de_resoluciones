@@ -28,3 +28,7 @@ class ResourceManager:
     # @staticmethod
     # def otro_icono():
     #     return ResourceManager.resource_path("otro.png")
+
+    @staticmethod
+    def cora_icon():
+        return ResourceManager.resource_path("cora.png")
