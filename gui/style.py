@@ -1,6 +1,6 @@
 STYLE_MAIN = """
 QWidget {
-    background-color: #1e1e1e;
+    background-color: #eefb09;
     color: #f0f0f0;
     font-family: Segoe UI, sans-serif;
     font-size: 12px;
