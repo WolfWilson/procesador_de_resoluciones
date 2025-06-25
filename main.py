@@ -9,7 +9,7 @@ def get_db_connection():
     server = 'sql01'
     database = 'Gestion'
     conn = pyodbc.connect(
-        f'DRIVER={{ODBC Driver 17 for SQL Server}};'
+        f'DRIVER={{SQL Server Native Client 10.0}};'
         f'SERVER={server};'
         f'DATABASE={database};'
         f'Trusted_Connection=yes;'
