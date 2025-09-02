@@ -8,13 +8,25 @@ from datetime import datetime
 def get_db_connection():
     server = 'sql01'
     database = 'Gestion'
-    conn = pyodbc.connect(
-        f'DRIVER={{SQL Server Native Client 10.0}};'
-        f'SERVER={server};'
-        f'DATABASE={database};'
-        f'Trusted_Connection=yes;'
-    )
-    return conn
+    drivers = [
+        "SQL Server Native Client 11.0",
+        "SQL Server",
+        "SQL Server Native Client 10.0"
+    ]
+    for driver in drivers:
+        try:
+            conn = pyodbc.connect(
+                f'DRIVER={{{driver}}};'
+                f'SERVER={server};'
+                f'DATABASE={database};'
+                f'Trusted_Connection=yes;'
+            )
+            print(f"Conexión exitosa con el driver: {driver}")
+            return conn
+        except pyodbc.Error:
+            print(f"No se pudo conectar con el driver: {driver}. Intentando con el siguiente...")
+            continue
+    raise Exception("No se pudo conectar a la base de datos con ninguno de los drivers disponibles.")
 
 def copy_files():
     source_dir = r'\\fs01\Resoluciones_Temp'
