@@ -8,7 +8,7 @@ def apply_stylesheet(app):
     /* General */
     QWidget {
         background-color: #2c2c2c; /* Color de fondo general */
-        color: #333;              /* Color de texto por defecto */
+        color: #ffffff;            /* Color de texto claro para que sea visible en fondo oscuro */
         font-family: 'Segoe UI', sans-serif; /* Fuente general */
         font-size: 13px;
     }
@@ -76,6 +76,51 @@ QProgressBar::chunk {
     QLineEdit:focus {
     border: 1px solid #007BFF;
     }
+    
+    /* QTextEdit para el área de log */
+    QTextEdit {
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+        border: 1px solid #444;
+        border-radius: 4px;
+        font-family: 'Consolas', 'Courier New', monospace;
+        selection-background-color: #264f78;
+        selection-color: #ffffff;
+    }
+    
+    /* Scrollbars para QTextEdit */
+    QScrollBar:vertical {
+        background: #2c2c2c;
+        width: 12px;
+        margin: 0px;
+    }
+    QScrollBar::handle:vertical {
+        background: #555;
+        min-height: 20px;
+        border-radius: 3px;
+    }
+    QScrollBar::handle:vertical:hover {
+        background: #777;
+    }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+        height: 0px;
+    }
+    QScrollBar:horizontal {
+        background: #2c2c2c;
+        height: 12px;
+        margin: 0px;
+    }
+    QScrollBar::handle:horizontal {
+        background: #555;
+        min-width: 20px;
+        border-radius: 3px;
+    }
+    QScrollBar::handle:horizontal:hover {
+        background: #777;
+    }
+    QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+        width: 0px;
+    }
 
     /* QMessageBox */
     QMessageBox {
@@ -83,9 +128,28 @@ QProgressBar::chunk {
     }
     QMessageBox QLabel {
         color: #ffffff;
+        font-size: 14px;
     }
     QMessageBox QPushButton {
-        min-width: 70px;
+        min-width: 80px;
+        min-height: 30px;
+    }
+    
+    /* QFrame para los paneles */
+    QFrame {
+        background-color: #333333;
+        border-radius: 5px;
+    }
+    
+    /* QSplitter */
+    QSplitter::handle {
+        background-color: #444444;
+    }
+    QSplitter::handle:horizontal {
+        width: 4px;
+    }
+    QSplitter::handle:vertical {
+        height: 4px;
     }
 
     /* QLabel en general */

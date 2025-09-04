@@ -1,0 +1,9 @@
+{
+    "temp_dir": "C:\\Temp",
+    "processed_dir": "C:\\Temp\\Procesados",
+    "backup_dir": "C:\\Temp\\Procesados\\PDFs_BK",
+    "source_dir": "\\\\fs01\\Resoluciones_Temp",
+    "target_dir": "\\\\fs01\\Resoluciones",
+    "cleanup_days": 60,
+    "progress_steps": [10, 25, 50, 75, 100]
+}
