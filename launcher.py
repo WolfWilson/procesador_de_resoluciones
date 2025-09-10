@@ -35,10 +35,12 @@ class OutputRedirector(QObject):
         if text and not text.isspace():
             self.output_written.emit(text.rstrip())
             # También escribimos a stdout original para que aparezca en la consola
-            sys.__stdout__.write(text)
+            if sys.__stdout__:
+                sys.__stdout__.write(text)
         
     def flush(self):
-        sys.__stdout__.flush()
+        if sys.__stdout__:
+            sys.__stdout__.flush()
 
 
 class ProcesoThread(QThread):
@@ -242,7 +244,8 @@ class MainWindow(QWidget):
                 
         # Desplazar al final
         scrollbar = self.log_area.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        if scrollbar:
+            scrollbar.setValue(scrollbar.maximum())
 
     def iniciar_proceso(self):
         # Creamos un QMessageBox manual para la pregunta
