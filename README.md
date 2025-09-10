@@ -22,6 +22,8 @@ Incluye validación de nombres de archivo, extracción de texto desde PDFs, inse
 - 🚫 Registro de errores y generación de logs para archivos con nombre inválido o año no reconocido.
 - 🧹 Traslado automático y backup de archivos procesados, con logs detallados.
 - 🖼️ Infraestructura lista para integrar una interfaz gráfica con **PyQt6** *(en desarrollo)*.
+- 🪵 **Sistema de Logging Mejorado**: Se agregó un sistema de logging detallado para facilitar la depuración y el monitoreo del flujo de trabajo.
+- ⚠️ **Resolución de Advertencias Pylance**: Se corrigieron problemas relacionados con atributos potencialmente `None` en el código.
 
 ---
 
@@ -144,6 +146,13 @@ Estas son las mejoras en curso que enriquecerán tanto la robustez del sistema c
 ↪ Se incorporarán controles para errores comunes como fallas de red, permisos de archivos, y problemas con el acceso a la base de datos.
 
 
+```
+
+## 🛠️ Comando PyInstaller
+Para generar un ejecutable único con todos los recursos necesarios, se utilizó el siguiente comando:
+
+```sh
+pyinstaller --onefile --windowed --name "Procesador de Resoluciones" --distpath "C:\My Software Folder" --icon="assets/icon.ico" --add-data "assets;assets" --add-data "config.json;." launcher.py
 ```
 
 ### 📝 Licencia
