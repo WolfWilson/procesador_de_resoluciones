@@ -4,6 +4,7 @@ import shutil
 import json
 import time
 from datetime import timedelta, datetime
+from pathlib import Path
 import pyodbc
 import PyPDF2
 
@@ -20,7 +21,7 @@ def get_db_connection():
             conn = pyodbc.connect(
                 f'DRIVER={{{driver}}};'
                 f'SERVER={server};'
-                f'DATABASE={database};'
+f'DATABASE={database};'
                 f'Trusted_Connection=yes;'
             )
             print(f"Conexión exitosa con el driver: {driver}")
@@ -53,26 +54,55 @@ def copy_files(config=None):
     if config is None:
         config = load_config()
     
-    source_dir = config["source_dir"]
-    dest_dir = config["temp_dir"]
-    if not os.path.exists(dest_dir):
-        os.makedirs(dest_dir)
-        print(f"Directorio temporal creado: {dest_dir}")
+    source_dir = Path(config["source_dir"])
+    dest_dir = Path(config["temp_dir"])
+    processed_dir = Path(config["processed_dir"])
+
+    os.makedirs(dest_dir, exist_ok=True)
+    print(f"Directorio temporal asegurado: {dest_dir}")
+    os.makedirs(processed_dir, exist_ok=True)
+    print(f"Directorio de procesados asegurado: {processed_dir}")
 
     print(f"Buscando archivos PDF en: {source_dir}")
-    archivos_encontrados = 0
+    copied_files = []
     
-    for subdir, dirs, files in os.walk(source_dir):
-        for file in files:
-            if file.endswith('.pdf'):
-                full_file_name = os.path.join(subdir, file)
-                if os.path.isfile(full_file_name):
-                    print(f"Copiando: {full_file_name} -> {dest_dir}")
-                    shutil.copy(full_file_name, dest_dir)
-                    archivos_encontrados += 1
+    if not source_dir.exists():
+        print(f"Advertencia: El directorio de origen no existe: {source_dir}")
+        return []
+
+    for file_path in source_dir.rglob('*.pdf'):
+        if file_path.is_file():
+            try:
+                dest_file = dest_dir / file_path.name
+                print(f"Copiando: {file_path} -> {dest_file}")
+                shutil.copy2(file_path, dest_file)
+                copied_files.append(str(dest_file.resolve()))
+            except Exception as e:
+                print(f"Error al copiar el archivo {file_path}: {e}")
+
+    manifest_path = processed_dir / "last_run_manifest.json"
+    print(f"Guardando manifiesto en: {manifest_path}")
+    with open(manifest_path, 'w', encoding='utf-8') as f:
+        json.dump(copied_files, f, indent=4)
+
+    print(f"Total de archivos copiados y registrados en manifiesto: {len(copied_files)}")
+    return copied_files
+
+def load_manifest(config=None):
+    """Carga la lista de archivos desde el manifiesto."""
+    if config is None:
+        config = load_config()
     
-    print(f"Total de archivos copiados: {archivos_encontrados}")
-    return archivos_encontrados
+    processed_dir = Path(config["processed_dir"])
+    manifest_path = processed_dir / "last_run_manifest.json"
+    
+    if not manifest_path.exists():
+        print("No se encontró el archivo de manifiesto. No hay archivos para procesar.")
+        return []
+        
+    with open(manifest_path, 'r', encoding='utf-8') as f:
+        file_paths_str = json.load(f)
+        return [Path(p) for p in file_paths_str]
 
 def extract_text_from_pdf(pdf_path):
     try:
@@ -95,21 +125,27 @@ def extract_text_from_pdf(pdf_path):
         print(f"Error al leer el archivo PDF {pdf_path}: {e}")
         raise Exception(f"Error al leer el archivo PDF {pdf_path}: {e}")
 
-def process_files(config=None):
+def process_files(files_to_process, config=None):
     if config is None:
         config = load_config()
         
-    dest_dir = config["temp_dir"]
-    files = [f for f in os.listdir(dest_dir) if f.endswith('.pdf')]
+    backup_dir = Path(config["backup_dir"])
     processed_files = []
     invalid_files = []
     current_year = datetime.now().year
     
-    print(f"Procesando {len(files)} archivos en {dest_dir}")
+    print(f"Procesando {len(files_to_process)} archivos desde el manifiesto.")
     
-    for file in files:
+    for file_path in files_to_process:
+        file = file_path.name
         print(f"Analizando archivo: {file}")
-        file_without_extension = os.path.splitext(file)[0]
+
+        # Assert defensivo para excluir archivos del backup
+        if backup_dir in file_path.parents:
+            print(f"Advertencia: Se omitió el archivo '{file}' porque está en el directorio de backup.")
+            continue
+
+        file_without_extension = file_path.stem
         parts = file_without_extension.split('-')
         if len(parts) == 3:
             letra, actuacion, ejercicio = parts
@@ -185,8 +221,9 @@ def insert_and_update_db(processed_files, config=None):
 
     print("Extrayendo texto de los PDFs y actualizando registros...")
     total_actualizados = 0
+    temp_dir = Path(config["temp_dir"])
     for letra, actuacion, ejercicio, file in processed_files:
-        pdf_path = os.path.join(config["temp_dir"], file)
+        pdf_path = temp_dir / file
         print(f"Procesando texto del PDF: {pdf_path}")
         try:
             extracted_text = extract_text_from_pdf(pdf_path)
@@ -236,27 +273,32 @@ def update_record(letra, actuacion, ejercicio, extracted_text, connection):
         print(f"No se encontraron registros para actualizar")
         return False
 
-def handle_file_collision(file_path, backup_dir):
-    base_name = os.path.basename(file_path)
-    new_file_path = os.path.join(backup_dir, base_name)
-    if os.path.exists(new_file_path):
-        file_name, file_ext = os.path.splitext(base_name)
-        counter = 1
-        while os.path.exists(new_file_path):
-            new_file_name = f"{file_name}_{counter}{file_ext}"
-            new_file_path = os.path.join(backup_dir, new_file_name)
-            counter += 1
-    return new_file_path
+def get_alternative_path(destination_path):
+    """Genera un nombre de archivo alternativo si el destino ya existe."""
+    if not destination_path.exists():
+        return destination_path
+    
+    parent = destination_path.parent
+    stem = destination_path.stem
+    ext = destination_path.suffix
+    counter = 1
+    
+    while True:
+        new_stem = f"{stem}_{counter}"
+        new_path = parent / f"{new_stem}{ext}"
+        if not new_path.exists():
+            print(f"Destino ocupado → usando nombre alternativo para el archivo nuevo: {new_path.name}")
+            return new_path
+        counter += 1
 
 def clean_and_move_files(processed_files, config=None):
     if config is None:
         config = load_config()
         
-    source_dir = config["source_dir"]
-    target_dir = config["target_dir"]
-    processed_dir = config["processed_dir"]
-    backup_dir = config["backup_dir"]
-    temp_dir = config["temp_dir"]
+    target_dir = Path(config["target_dir"])
+    processed_dir = Path(config["processed_dir"])
+    backup_dir = Path(config["backup_dir"])
+    temp_dir = Path(config["temp_dir"])
     
     print(f"Preparando directorios para mover archivos procesados...")
     os.makedirs(processed_dir, exist_ok=True)
@@ -264,7 +306,7 @@ def clean_and_move_files(processed_files, config=None):
     print(f"Directorios creados: {processed_dir}, {backup_dir}")
 
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    registro_path = os.path.join(processed_dir, f'registro_{timestamp}.txt')
+    registro_path = processed_dir / f'registro_{timestamp}.txt'
     print(f"Creando archivo de registro: {registro_path}")
 
     with open(registro_path, 'w', encoding='utf-8') as registro_file:
@@ -272,55 +314,56 @@ def clean_and_move_files(processed_files, config=None):
         print(f"Moviendo {len(processed_files)} archivos procesados...")
 
         for (letra, actuacion, ejercicio, file) in processed_files:
-            src_path = os.path.join(temp_dir, file)
-            year_dir = os.path.join(target_dir, ejercicio)
+            src_path = temp_dir / file
+            
+            # Mover a backup local
+            dest_backup_path = get_alternative_path(backup_dir / file)
+            print(f"Moviendo archivo a backup local: {src_path} -> {dest_backup_path}")
+            shutil.move(str(src_path), str(dest_backup_path))
+
+            # Copiar a destino final en red
+            year_dir = target_dir / ejercicio
             os.makedirs(year_dir, exist_ok=True)
-            print(f"Directorio de destino para año {ejercicio}: {year_dir}")
+            
+            dest_path_year = get_alternative_path(year_dir / file)
+            
+            print(f"Copiando archivo a destino final: {dest_backup_path} -> {dest_path_year}")
+            shutil.copy2(str(dest_backup_path), str(dest_path_year))
+            
+            registro_file.write(f"{file} movido a BK -> {dest_backup_path.name} y copiado a {dest_path_year}\n")
 
-            dest_backup_path = handle_file_collision(src_path, backup_dir)
-            print(f"Copiando archivo a backup: {src_path} -> {dest_backup_path}")
-            shutil.copy(src_path, dest_backup_path)
-
-            dest_path_year = os.path.join(year_dir, file)
-            if os.path.exists(dest_path_year):
-                file_name, file_ext = os.path.splitext(file)
-                counter = 1
-                while os.path.exists(dest_path_year):
-                    new_file = f"{file_name}_{counter}{file_ext}"
-                    dest_path_year = os.path.join(year_dir, new_file)
-                    counter += 1
-                print(f"Archivo existente, renombrando a: {dest_path_year}")
-            else:
-                print(f"Moviendo archivo a destino final: {src_path} -> {dest_path_year}")
-
-            shutil.move(src_path, dest_path_year)
-            registro_file.write(f"{file} copiado en BK -> {dest_backup_path} y movido a {dest_path_year}\n")
-
-    print(f"Limpiando archivos originales en directorio fuente: {source_dir}")
+    print(f"Limpiando archivos originales en directorio fuente: {config['source_dir']}")
     archivos_eliminados = 0
-    for subdir, dirs, files in os.walk(source_dir, topdown=False):
-        for file in files:
-            if file.endswith('.pdf'):
-                file_path = os.path.join(subdir, file)
-                print(f"Eliminando archivo original: {file_path}")
-                os.remove(file_path)
-                archivos_eliminados += 1
-        for dir in dirs:
-            dir_path = os.path.join(subdir, dir)
-            if not os.listdir(dir_path):
-                print(f"Eliminando directorio vacío: {dir_path}")
-                os.rmdir(dir_path)
-    
+    source_dir = Path(config["source_dir"])
+    if source_dir.exists():
+        for file_path in source_dir.rglob('*.pdf'):
+            if file_path.is_file():
+                try:
+                    print(f"Eliminando archivo original: {file_path}")
+                    os.unlink(file_path)
+                    archivos_eliminados += 1
+                except Exception as e:
+                    print(f"Error al eliminar {file_path}: {e}")
+        
+        # Limpiar directorios vacíos
+        for dirpath, _, _ in os.walk(source_dir, topdown=False):
+            if not os.listdir(dirpath):
+                try:
+                    print(f"Eliminando directorio vacío: {dirpath}")
+                    os.rmdir(dirpath)
+                except Exception as e:
+                    print(f"Error al eliminar directorio {dirpath}: {e}")
+
     print(f"Total de archivos originales eliminados: {archivos_eliminados}")            
-    return registro_path
+    return str(registro_path)
 
 def generate_invalid_files_log(invalid_files, config=None):
     if config is None:
         config = load_config()
         
-    log_dir = config["processed_dir"]
+    log_dir = Path(config["processed_dir"])
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'log_errores.txt')
+    log_path = log_dir / 'log_errores.txt'
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     print(f"Generando log de archivos inválidos: {log_path}")
@@ -331,7 +374,7 @@ def generate_invalid_files_log(invalid_files, config=None):
             print(f"Archivo inválido registrado: {file}")
     
     print(f"Log de errores guardado con {len(invalid_files)} archivos registrados")
-    return log_path
+    return str(log_path)
 
 def cleanup_old_files(config=None):
     """Elimina archivos temporales más antiguos que el número de días especificado"""
@@ -339,10 +382,14 @@ def cleanup_old_files(config=None):
         config = load_config()
     
     cleanup_days = config.get("cleanup_days", 60)
-    temp_dir = config["temp_dir"]
-    processed_dir = config["processed_dir"]
-    backup_dir = config["backup_dir"]
+    temp_dir = Path(config["temp_dir"])
+    processed_dir = Path(config["processed_dir"])
+    backup_dir = Path(config["backup_dir"])
     
+    # Asegurar que los directorios de logs existan
+    os.makedirs(processed_dir, exist_ok=True)
+    os.makedirs(backup_dir, exist_ok=True)
+
     print(f"Iniciando limpieza de archivos antiguos (más de {cleanup_days} días)...")
     cutoff_date = datetime.now() - timedelta(days=cleanup_days)
     print(f"Fecha límite para limpieza: {cutoff_date.strftime('%Y-%m-%d')}")
@@ -352,16 +399,18 @@ def cleanup_old_files(config=None):
     # Función auxiliar para eliminar archivos antiguos en una carpeta
     def delete_old_files_in_dir(directory):
         local_deleted = []
-        if os.path.exists(directory):
+        if directory.exists():
             print(f"Analizando directorio: {directory}")
-            for file in os.listdir(directory):
-                file_path = os.path.join(directory, file)
-                if os.path.isfile(file_path):
-                    file_mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                    if file_mod_time < cutoff_date:
-                        print(f"Eliminando archivo antiguo: {file_path} (modificado: {file_mod_time.strftime('%Y-%m-%d')})")
-                        os.remove(file_path)
-                        local_deleted.append(file_path)
+            for file_path in directory.iterdir():
+                if file_path.is_file():
+                    try:
+                        file_mod_time = datetime.fromtimestamp(file_path.stat().st_mtime)
+                        if file_mod_time < cutoff_date:
+                            print(f"Eliminando archivo antiguo: {file_path} (modificado: {file_mod_time.strftime('%Y-%m-%d')})")
+                            os.unlink(file_path)
+                            local_deleted.append(str(file_path))
+                    except Exception as e:
+                        print(f"No se pudo procesar o eliminar {file_path}: {e}")
         return local_deleted
     
     # Eliminar archivos antiguos en carpetas temporales
@@ -377,7 +426,7 @@ def cleanup_old_files(config=None):
     
     # Registrar la limpieza
     if deleted_files:
-        log_path = os.path.join(processed_dir, 'cleanup_log.txt')
+        log_path = processed_dir / 'cleanup_log.txt'
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         
         print(f"Generando log de limpieza: {log_path}")
@@ -388,7 +437,7 @@ def cleanup_old_files(config=None):
                 log_file.write(f"- {file}\n")
         
         print(f"Limpieza completada. Se eliminaron {len(deleted_files)} archivos.")
-        return log_path, len(deleted_files)
+        return str(log_path), len(deleted_files)
     
     print("Limpieza completada. No se encontraron archivos para eliminar.")
     return None, 0
@@ -405,12 +454,18 @@ def ejecutar_proceso_completo():
         if cleanup_log:
             print(f"Limpieza completada, log generado en: {cleanup_log}")
         
-        print("Copiando archivos desde origen...")
-        archivos_copiados = copy_files(config)
-        print(f"Copia completada: {archivos_copiados} archivos copiados")
+        print("Copiando archivos desde origen y creando manifiesto...")
+        copy_files(config)
         
-        print("Procesando archivos...")
-        processed_files, invalid_files = process_files(config)
+        print("Cargando manifiesto para procesar...")
+        files_to_process = load_manifest(config)
+        
+        if not files_to_process:
+            print("Manifiesto vacío o no encontrado. 0 archivos a procesar.")
+            return False, None, None, cleanup_log, deleted_count
+
+        print("Procesando archivos desde manifiesto...")
+        processed_files, invalid_files = process_files(files_to_process, config)
         print(f"Procesamiento completado: {len(processed_files)} válidos, {len(invalid_files)} inválidos")
         
         log_path = None
@@ -423,12 +478,12 @@ def ejecutar_proceso_completo():
             print("Actualizando base de datos...")
             insert_and_update_db(processed_files, config)
             
-            print("Moviendo archivos procesados...")
+            print("Moviendo y copiando archivos procesados...")
             registro_path = clean_and_move_files(processed_files, config)
             print(f"Proceso completado con éxito. Registro generado en: {registro_path}")
             return True, registro_path, log_path, cleanup_log, deleted_count
         else:
-            print("No se encontraron archivos válidos para procesar.")
+            print("No se encontraron archivos válidos para procesar en el manifiesto.")
             return False, None, log_path, cleanup_log, deleted_count
     except Exception as e:
         print(f"ERROR EN EL PROCESO: {e}")
@@ -437,4 +492,3 @@ def ejecutar_proceso_completo():
         return False, None, None, None, 0
     finally:
         print("=== PROCESO FINALIZADO ===")    
-
