@@ -315,9 +315,11 @@ def get_alternative_path(destination_path):
             return new_path
         counter += 1
 
-def clean_and_move_files(processed_files, config=None):
+def clean_and_move_files(processed_files, invalid_files=None, config=None):
     if config is None:
         config = load_config()
+    if invalid_files is None:
+        invalid_files = []
         
     target_dir = Path(config["target_dir"])
     processed_dir = Path(config["processed_dir"])
@@ -356,20 +358,46 @@ def clean_and_move_files(processed_files, config=None):
             
             registro_file.write(f"{file} movido a BK -> {dest_backup_path.name} y copiado a {dest_path_year}\n")
 
+    # Nombres de archivos válidamente procesados (los únicos que se pueden borrar del origen)
+    nombres_procesados = {file for (_, _, _, file) in processed_files}
+    # Nombres de archivos inválidos (hay que conservarlos en origen y limpiar solo su copia temporal)
+    nombres_invalidos = set()
+    for item in invalid_files:
+        archivo = item[0] if isinstance(item, tuple) else item
+        nombres_invalidos.add(archivo)
+
+    # Eliminar copias temporales de archivos inválidos (fueron copiados a temp pero no procesados)
+    for nombre in nombres_invalidos:
+        tmp_path = temp_dir / nombre
+        if tmp_path.exists():
+            try:
+                print(f"Eliminando copia temporal de archivo inválido: {tmp_path}")
+                os.unlink(tmp_path)
+            except Exception as e:
+                print(f"Error al eliminar copia temporal {tmp_path}: {e}")
+
     print(f"Limpiando archivos originales en directorio fuente: {config['source_dir']}")
     archivos_eliminados = 0
+    archivos_conservados = 0
     source_dir = Path(config["source_dir"])
     if source_dir.exists():
         for file_path in source_dir.rglob('*.pdf'):
             if file_path.is_file():
-                try:
-                    print(f"Eliminando archivo original: {file_path}")
-                    os.unlink(file_path)
-                    archivos_eliminados += 1
-                except Exception as e:
-                    print(f"Error al eliminar {file_path}: {e}")
+                if file_path.name in nombres_procesados:
+                    try:
+                        print(f"Eliminando archivo original procesado: {file_path}")
+                        os.unlink(file_path)
+                        archivos_eliminados += 1
+                    except Exception as e:
+                        print(f"Error al eliminar {file_path}: {e}")
+                else:
+                    print(f"Conservando archivo en origen (no procesado): {file_path.name}")
+                    archivos_conservados += 1
         
-        # Limpiar directorios vacíos
+        if archivos_conservados > 0:
+            print(f"Se conservaron {archivos_conservados} archivo/s en origen pendientes de corrección.")
+
+        # Limpiar solo directorios vacíos (no tocar los que tienen archivos pendientes)
         for dirpath, _, _ in os.walk(source_dir, topdown=False):
             if not os.listdir(dirpath):
                 try:
@@ -541,7 +569,7 @@ def ejecutar_proceso_completo():
             insert_and_update_db(processed_files, config)
             
             print("Moviendo y copiando archivos procesados...")
-            registro_path = clean_and_move_files(processed_files, config)
+            registro_path = clean_and_move_files(processed_files, invalid_files, config)
             print(f"Proceso completado con éxito. Registro generado en: {registro_path}")
             resumen = _construir_resumen(processed_files, invalid_files)
             return True, registro_path, log_path, cleanup_log, deleted_count, resumen
