@@ -45,7 +45,7 @@ class OutputRedirector(QObject):
 
 class ProcesoThread(QThread):
     progreso = pyqtSignal(int)
-    terminado = pyqtSignal(bool, str, str, str, int)
+    terminado = pyqtSignal(bool, str, str, str, int, str)
     log_update = pyqtSignal(str)
 
     def __init__(self):
@@ -88,7 +88,7 @@ class ProcesoThread(QThread):
                 self.progreso.emit(progress_steps[3])
             
             # Ejecutamos el proceso completo
-            exito, registro_path, log_path, cleanup_log, deleted_count = ejecutar_proceso_completo()
+            exito, registro_path, log_path, cleanup_log, deleted_count, resumen = ejecutar_proceso_completo()
             
             # Paso final
             self.progreso.emit(100)
@@ -101,7 +101,7 @@ class ProcesoThread(QThread):
             else:
                 self.log_update.emit("No se encontraron archivos válidos para procesar.")
                 
-            self.terminado.emit(exito, registro_path, log_path, cleanup_log, deleted_count)
+            self.terminado.emit(exito, registro_path or '', log_path or '', cleanup_log or '', deleted_count, resumen or '')
         
         finally:
             # Restaurar stdout original
@@ -287,20 +287,36 @@ class MainWindow(QWidget):
         os.startfile(processed_dir)
         self.agregar_log(f"Abriendo carpeta de procesados: {processed_dir}")
 
-    def mostrar_mensaje(self, exito, registro_path, log_path, cleanup_log, deleted_count):
+    def mostrar_mensaje(self, exito, registro_path, log_path, cleanup_log, deleted_count, resumen):
         self.boton_procesar.setEnabled(True)
         
-        mensaje = "¡Proceso finalizado con éxito!" if exito else "No se encontraron archivos válidos para procesar."
-        
-        if deleted_count > 0:
-            mensaje += f"\n\nSe eliminaron {deleted_count} archivos temporales antiguos."
-        
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Resultado")
-        msg_box.setText(mensaje)
-        msg_box.setIcon(QMessageBox.Icon.NoIcon)
+        # Añadir detalles de archivos al log
+        if registro_path and os.path.exists(registro_path):
+            self.agregar_log(f"Registro de procesamiento guardado en: {registro_path}")
+        if log_path and os.path.exists(log_path):
+            self.agregar_log(f"Log de errores guardado en: {log_path}")
+        if cleanup_log and os.path.exists(cleanup_log):
+            self.agregar_log(f"Log de limpieza guardado en: {cleanup_log}")
 
-        # Ícono exclamación
+        # Construir texto del diálogo a partir del resumen
+        if resumen:
+            texto_dialogo = resumen
+        elif exito:
+            texto_dialogo = "¡Proceso finalizado con éxito!"
+        else:
+            texto_dialogo = "No se encontraron archivos válidos para procesar."
+
+        if deleted_count > 0:
+            texto_dialogo += f"\n\nSe eliminaron {deleted_count} archivos temporales antiguos."
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Resumen del Proceso")
+        msg_box.setText(texto_dialogo)
+        msg_box.setIcon(QMessageBox.Icon.NoIcon)
+        # Fuente monoespaciada para que los separadores y la alineación se vean bien
+        from PyQt6.QtGui import QFont
+        msg_box.setFont(QFont("Consolas", 9))
+
         pix_exclamacion = QPixmap(ResourceManager.exclamacion_icon())
         pix_exclamacion = pix_exclamacion.scaled(
             48, 48,
@@ -308,16 +324,6 @@ class MainWindow(QWidget):
             transformMode=Qt.TransformationMode.SmoothTransformation
         )
         msg_box.setIconPixmap(pix_exclamacion)
-        
-        # Añadir detalles adicionales al log
-        if registro_path and os.path.exists(registro_path):
-            self.agregar_log(f"Registro de procesamiento guardado en: {registro_path}")
-            
-        if log_path and os.path.exists(log_path):
-            self.agregar_log(f"Log de errores guardado en: {log_path}")
-            
-        if cleanup_log and os.path.exists(cleanup_log):
-            self.agregar_log(f"Log de limpieza guardado en: {cleanup_log}")
 
         msg_box.exec()
 

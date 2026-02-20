@@ -149,15 +149,39 @@ def process_files(files_to_process, config=None):
         parts = file_without_extension.split('-')
         if len(parts) == 3:
             letra, actuacion, ejercicio = parts
-            if ejercicio.isdigit() and int(ejercicio) <= current_year:
-                print(f"Archivo válido: Letra={letra}, Actuación={actuacion}, Ejercicio={ejercicio}")
-                processed_files.append((letra, actuacion, ejercicio, file))
-            else:
-                print(f"Archivo inválido (ejercicio no válido): {file}")
-                invalid_files.append(file)
+
+            # Validar letra: debe ser un único dígito numérico
+            if not (len(letra) == 1 and letra.isdigit()):
+                razon = f"letra inválida ('{letra}') — debe ser un único dígito numérico (ej: 1, 2, 3)"
+                print(f"[NOMENCLATURA INVÁLIDA] Archivo ignorado: '{file}' — {razon}")
+                invalid_files.append((file, razon))
+                continue
+
+            # Validar ejercicio
+            if not (ejercicio.isdigit() and int(ejercicio) <= current_year):
+                razon = f"ejercicio inválido ('{ejercicio}' no es un año válido)"
+                print(f"[NOMENCLATURA INVÁLIDA] Archivo ignorado: '{file}' — {razon}")
+                invalid_files.append((file, razon))
+                continue
+
+            # Validar actuacion: debe ser numérico y tener exactamente 6 dígitos
+            if not actuacion.isdigit():
+                razon = f"número de actuación no es numérico ('{actuacion}')"
+                print(f"[NOMENCLATURA INVÁLIDA] Archivo ignorado: '{file}' — {razon}")
+                invalid_files.append((file, razon))
+                continue
+            if len(actuacion) != 6:
+                razon = f"número de actuación tiene {len(actuacion)} dígitos en lugar de 6 ('{actuacion}') — ¿falta un cero?"
+                print(f"[NOMENCLATURA INVÁLIDA] Archivo ignorado: '{file}' — {razon}")
+                invalid_files.append((file, razon))
+                continue
+
+            print(f"Archivo válido: Letra={letra}, Actuación={actuacion}, Ejercicio={ejercicio}")
+            processed_files.append((letra, actuacion, ejercicio, file))
         else:
-            print(f"Archivo inválido (formato incorrecto): {file}")
-            invalid_files.append(file)
+            razon = f"formato incorrecto, se esperaban 3 partes separadas por '-' pero se encontraron {len(parts)} ('{file_without_extension}')"
+            print(f"[NOMENCLATURA INVÁLIDA] Archivo ignorado: '{file}' — {razon}")
+            invalid_files.append((file, razon))
 
     print(f"Total archivos válidos: {len(processed_files)}")
     print(f"Total archivos inválidos: {len(invalid_files)}")
@@ -367,13 +391,24 @@ def generate_invalid_files_log(invalid_files, config=None):
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     print(f"Generando log de archivos inválidos: {log_path}")
+    print(f"{'='*60}")
+    print(f"  ARCHIVOS CON NOMENCLATURA INVÁLIDA ({len(invalid_files)} archivo/s)")
+    print(f"{'='*60}")
     with open(log_path, 'a', encoding='utf-8') as log_file:
-        log_file.write(f"\nErrores encontrados el: {timestamp}\n")
-        for file in invalid_files:
-            log_file.write(f"- {file}\n")
-            print(f"Archivo inválido registrado: {file}")
+        log_file.write(f"\nErrores de nomenclatura encontrados el: {timestamp}\n")
+        log_file.write(f"{'='*60}\n")
+        for item in invalid_files:
+            if isinstance(item, tuple):
+                file, razon = item
+            else:
+                file, razon = item, "motivo no especificado"
+            linea = f"  - {file}: {razon}"
+            log_file.write(f"{linea}\n")
+            print(linea)
+        log_file.write(f"{'='*60}\n")
+    print(f"{'='*60}")
     
-    print(f"Log de errores guardado con {len(invalid_files)} archivos registrados")
+    print(f"Log de errores guardado en: {log_path}")
     return str(log_path)
 
 def cleanup_old_files(config=None):
@@ -442,11 +477,37 @@ def cleanup_old_files(config=None):
     print("Limpieza completada. No se encontraron archivos para eliminar.")
     return None, 0
 
+def _construir_resumen(processed_files, invalid_files):
+    """Construye e imprime el bloque de resumen final del proceso."""
+    n_validos = len(processed_files)
+    n_invalidos = len(invalid_files)
+    sep = "=" * 60
+    lineas = [
+        "",
+        sep,
+        "  RESUMEN FINAL DEL PROCESO",
+        sep,
+        f"  Archivos procesados correctamente : {n_validos}",
+        f"  Archivos con nomenclatura inválida: {n_invalidos}",
+    ]
+    if invalid_files:
+        lineas.append("  Detalle de archivos con problemas:")
+        for item in invalid_files:
+            archivo, razon = item if isinstance(item, tuple) else (item, "motivo no especificado")
+            lineas.append(f"    - {archivo}: {razon}")
+    lineas.append(sep)
+    resumen = "\n".join(lineas)
+    print(resumen)
+    return resumen
+
+
 def ejecutar_proceso_completo():
     print("=== INICIANDO PROCESO COMPLETO ===")
     config = load_config()
     print(f"Configuración cargada: {config}")
-    
+    processed_files = []
+    invalid_files = []
+
     try:
         # Limpiar archivos antiguos antes de comenzar
         print("Iniciando limpieza de archivos antiguos...")
@@ -462,7 +523,8 @@ def ejecutar_proceso_completo():
         
         if not files_to_process:
             print("Manifiesto vacío o no encontrado. 0 archivos a procesar.")
-            return False, None, None, cleanup_log, deleted_count
+            resumen = _construir_resumen(processed_files, invalid_files)
+            return False, None, None, cleanup_log, deleted_count, resumen
 
         print("Procesando archivos desde manifiesto...")
         processed_files, invalid_files = process_files(files_to_process, config)
@@ -481,14 +543,17 @@ def ejecutar_proceso_completo():
             print("Moviendo y copiando archivos procesados...")
             registro_path = clean_and_move_files(processed_files, config)
             print(f"Proceso completado con éxito. Registro generado en: {registro_path}")
-            return True, registro_path, log_path, cleanup_log, deleted_count
+            resumen = _construir_resumen(processed_files, invalid_files)
+            return True, registro_path, log_path, cleanup_log, deleted_count, resumen
         else:
             print("No se encontraron archivos válidos para procesar en el manifiesto.")
-            return False, None, log_path, cleanup_log, deleted_count
+            resumen = _construir_resumen(processed_files, invalid_files)
+            return False, None, log_path, cleanup_log, deleted_count, resumen
     except Exception as e:
         print(f"ERROR EN EL PROCESO: {e}")
         import traceback
         print(traceback.format_exc())
-        return False, None, None, None, 0
+        resumen = _construir_resumen(processed_files, invalid_files)
+        return False, None, None, None, 0, resumen
     finally:
         print("=== PROCESO FINALIZADO ===")    
