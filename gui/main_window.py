@@ -47,7 +47,7 @@ class ProcesamientoThread(QThread):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Procesador de Resoluciones")
+        self.setWindowTitle("Procesador de Disposiciones")
         self.setMinimumWidth(400)
 
         # Icono de la ventana

@@ -111,7 +111,7 @@ class ProcesoThread(QThread):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Procesador de Resoluciones")
+        self.setWindowTitle("Procesador de Disposiciones")
         self.setMinimumWidth(800)
         self.setMinimumHeight(600)
         
